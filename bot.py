@@ -2,67 +2,68 @@ import discord
 from discord.ext import commands
 from discord import app_commands
 import os
-from dotenv import load_dotenv
 
-load_dotenv()
+# ===== CONFIG =====
+TOKEN = os.getenv("TOKEN")  # Railway
+GUILD_ID = 1483270417056665806  # ⚠️ MET TON ID SERVEUR
 
-TOKEN = os.getenv("TOKEN")
+WELCOME_CHANNEL_ID = 1483278869820735691  # salon bienvenue
 
-# 🔥 CONFIG
-WELCOME_CHANNEL_ID = 1483278869820735691  # mets ton ID ici
+WELCOME_IMAGE = "https://i.imgur.com/yourimage.png"  # image bienvenue
 
+# ===== INTENTS =====
 intents = discord.Intents.default()
 intents.members = True
-intents.message_content = True
 
 bot = commands.Bot(command_prefix="!", intents=intents)
 
-# ===== BIENVENUE AUTO =====
+# ===== ON READY =====
+@bot.event
+async def on_ready():
+    print(f"Connecté en tant que {bot.user}")
+
+    try:
+        guild = discord.Object(id=GUILD_ID)
+        bot.tree.copy_global_to(guild=guild)
+        synced = await bot.tree.sync(guild=guild)
+        print(f"Commandes sync : {len(synced)}")
+    except Exception as e:
+        print(e)
+
+# ===== BIENVENUE =====
 @bot.event
 async def on_member_join(member):
-    channel = member.guild.get_channel(WELCOME_CHANNEL_ID)
+    channel = bot.get_channel(WELCOME_CHANNEL_ID)
 
-    if channel:
-        embed = discord.Embed(
-            description=(
-                f"👋 Bienvenue {member.mention} sur le serveur 🎮\n\n"
-                "Ici tu peux acheter jeux et cartes cadeaux à bon prix.\n\n"
-                "📜 Lis le règlement\n"
-                "🛒 Regarde la boutique\n"
-                "🎫 Ouvre un ticket pour acheter\n\n"
-                "🔥 Amuse-toi bien !"
-            ),
-            color=0xff7a00
-        )
+    embed = discord.Embed(
+        description=f"👋 Bienvenue {member.mention} sur le serveur !\n\nAmuse-toi bien 🎮",
+        color=discord.Color.green()
+    )
 
-        # 🔥 IMAGE (change le lien)
-        embed.set_image(url="https://i.postimg.cc/3x49vyTZ/321ac303e526c9b325dd42370ac73672.webp")
+    embed.set_image(url=WELCOME_IMAGE)
+    embed.set_footer(text="Game Store")
 
-        embed.set_footer(text="GameStore FR")
+    await channel.send(embed=embed)
 
-        await channel.send(embed=embed)
-
-# ===== COMMANDE EMBED PERSONNALISÉ =====
-@bot.tree.command(name="embed", description="Envoyer un message stylé avec image")
-@app_commands.describe(
-    message="Ton message",
-    image="Lien de l'image (optionnel)"
-)
+# ===== COMMANDE EMBED =====
+@bot.tree.command(name="embed", description="Envoyer un message stylé")
+@app_commands.describe(message="Ton message", image="Lien image (optionnel)")
 async def embed(interaction: discord.Interaction, message: str, image: str = None):
 
     embed = discord.Embed(
         description=message,
-        color=0x2b2d31
+        color=discord.Color.blue()
     )
 
-    # 🔥 image optionnelle
     if image:
         embed.set_image(url=image)
 
+    embed.set_footer(text="Game Store")
+
     await interaction.response.send_message(embed=embed)
 
-# ===== COMMANDE MOYENS DE PAIEMENT =====
-@bot.tree.command(name="paiement", description="Afficher moyens de paiement")
+# ===== COMMANDE PAIEMENT =====
+@bot.tree.command(name="paiement", description="Afficher les moyens de paiement")
 async def paiement(interaction: discord.Interaction):
 
     embed = discord.Embed(
@@ -73,19 +74,10 @@ async def paiement(interaction: discord.Interaction):
             "• LTC\n"
             "━━━━━━━━━━━━━━━"
         ),
-        color=0x2b2d31
+        color=discord.Color.green()
     )
-
-    # 🔥 image optionnelle (tu peux changer ou supprimer)
-    embed.set_image(url="https://i.imgur.com/your-image.png")
 
     await interaction.response.send_message(embed=embed)
 
-# ===== READY =====
-@bot.event
-async def on_ready():
-    print(f"Connecté en tant que {bot.user}")
-    await bot.tree.sync()
-
-# ===== RUN =====
+# ===== LANCEMENT =====
 bot.run(TOKEN)
